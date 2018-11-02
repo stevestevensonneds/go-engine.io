@@ -14,13 +14,14 @@ import (
 )
 
 type config struct {
-	PingTimeout   time.Duration
-	PingInterval  time.Duration
-	MaxConnection int
-	AllowRequest  func(*http.Request) error
-	AllowUpgrades bool
-	Cookie        string
-	NewId         func(r *http.Request) string
+	PingTimeout       time.Duration
+	PingInterval      time.Duration
+	MaxConnection     int
+	AllowRequest      func(*http.Request) error
+	AllowUpgrades     bool
+	EnableCompression bool
+	Cookie            string
+	NewId             func(r *http.Request) string
 }
 
 // Server is the server of engine.io.
@@ -97,6 +98,11 @@ func (s *Server) SetAllowRequest(f func(*http.Request) error) {
 // SetAllowUpgrades sets whether server allows transport upgrade. Default is true.
 func (s *Server) SetAllowUpgrades(allow bool) {
 	s.config.AllowUpgrades = allow
+}
+
+// SetEnableCompression sets whether server should attempt to negotiate compression on the transport upgrade. Default is false.
+func (s *Server) SetEnableCompression(enable bool) {
+	s.config.EnableCompression = enable
 }
 
 // SetCookie sets the name of cookie which used by engine.io. Default is "io".

@@ -11,6 +11,7 @@ import (
 type Callback interface {
 	OnPacket(r *parser.PacketDecoder)
 	OnClose(server Server)
+	GetEnableCompression() bool
 }
 
 type Creater struct {

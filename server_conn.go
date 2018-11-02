@@ -63,22 +63,23 @@ const (
 )
 
 type serverConn struct {
-	id              string
-	request         *http.Request
-	callback        serverCallback
-	writerLocker    sync.Mutex
-	transportLocker sync.RWMutex
-	currentName     string
-	current         transport.Server
-	upgradingName   string
-	upgrading       transport.Server
-	state           state
-	stateLocker     sync.RWMutex
-	readerChan      chan *connReader
-	pingTimeout     time.Duration
-	pingInterval    time.Duration
-	pingChan        chan bool
-	pingLocker      sync.Mutex
+	id                string
+	request           *http.Request
+	callback          serverCallback
+	writerLocker      sync.Mutex
+	transportLocker   sync.RWMutex
+	currentName       string
+	current           transport.Server
+	upgradingName     string
+	upgrading         transport.Server
+	enableCompression bool
+	state             state
+	stateLocker       sync.RWMutex
+	readerChan        chan *connReader
+	pingTimeout       time.Duration
+	pingInterval      time.Duration
+	pingChan          chan bool
+	pingLocker        sync.Mutex
 }
 
 var InvalidError = errors.New("invalid transport")
@@ -90,14 +91,15 @@ func newServerConn(id string, w http.ResponseWriter, r *http.Request, callback s
 		return nil, InvalidError
 	}
 	ret := &serverConn{
-		id:           id,
-		request:      r,
-		callback:     callback,
-		state:        stateNormal,
-		readerChan:   make(chan *connReader),
-		pingTimeout:  callback.configure().PingTimeout,
-		pingInterval: callback.configure().PingInterval,
-		pingChan:     make(chan bool),
+		id:                id,
+		request:           r,
+		callback:          callback,
+		enableCompression: callback.configure().EnableCompression,
+		state:             stateNormal,
+		readerChan:        make(chan *connReader),
+		pingTimeout:       callback.configure().PingTimeout,
+		pingInterval:      callback.configure().PingInterval,
+		pingChan:          make(chan bool),
 	}
 	transport, err := creater.Server(w, r, ret)
 	if err != nil {
@@ -196,6 +198,10 @@ func (c *serverConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c.current.ServeHTTP(w, r)
+}
+
+func (s *serverConn) GetEnableCompression() bool {
+	return s.enableCompression
 }
 
 func (c *serverConn) OnPacket(r *parser.PacketDecoder) {

@@ -16,9 +16,21 @@ type Server struct {
 }
 
 func NewServer(w http.ResponseWriter, r *http.Request, callback transport.Callback) (transport.Server, error) {
-	conn, err := websocket.Upgrade(w, r, nil, 10240, 10240)
+	var upgrader = websocket.Upgrader{
+		ReadBufferSize:    10240,
+		WriteBufferSize:   10240,
+		EnableCompression: callback.GetEnableCompression(),
+		CheckOrigin:       func(r *http.Request) bool { return true },
+	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if callback.GetEnableCompression() {
+		conn.EnableWriteCompression(true)
+		conn.SetCompressionLevel(1)
 	}
 
 	ret := &Server{
